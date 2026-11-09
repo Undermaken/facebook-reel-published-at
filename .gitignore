@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.DS_Store
+.superpowers/
+.cache/
+.npm/
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.swp
+*.swo
