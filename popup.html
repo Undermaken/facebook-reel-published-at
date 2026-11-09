@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reel dates</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script defer src="popup.js"></script>
+  </head>
+  <body>
+    <header>
+      <span class="brand-icon" aria-hidden="true"
+        ><svg viewBox="0 0 24 24">
+          <rect x="4" y="5" width="16" height="16" rx="3" />
+          <path d="M8 3v4m8-4v4M4 11h16m-11 5h6" /></svg
+      ></span>
+      <div>
+        <h1 data-i18n="title">Reel dates</h1>
+        <p data-i18n="subtitle"></p>
+      </div>
+    </header>
+    <main>
+      <section class="preview-section">
+        <p class="section-label" data-i18n="positionHint"></p>
+        <div id="mockup" class="mockup">
+          <div class="reel-frame">
+            <div class="scene" aria-hidden="true">
+              <svg viewBox="0 0 180 320" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="studio" x2="1" y2="1">
+                    <stop stop-color="#f6cdbb" />
+                    <stop offset="1" stop-color="#c2b7e8" />
+                  </linearGradient>
+                  <linearGradient id="shade" x2="0" y2="1">
+                    <stop offset=".58" stop-color="#15243c" stop-opacity="0" />
+                    <stop offset="1" stop-color="#15243c" stop-opacity=".8" />
+                  </linearGradient>
+                </defs>
+                <path fill="url(#studio)" d="M0 0h180v320H0z" />
+                <circle cx="20" cy="65" r="82" fill="#fff4df" opacity=".3" />
+                <path d="M147 0h33v251l-89-47z" fill="#aa94cf" opacity=".25" />
+                <ellipse cx="94" cy="259" rx="57" ry="9" fill="#5d4a76" opacity=".18" />
+                <g
+                  fill="none"
+                  stroke="#8873ad"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M145 66V49l12-3v16m-12-10 12-3" stroke-width="2.5" />
+                  <path d="m26 132 2-7m-7 3 9 2m112 45 4-5m-7 0 7 5" stroke-width="2" />
+                </g>
+                <g fill="#8873ad">
+                  <ellipse
+                    cx="141.5"
+                    cy="67"
+                    rx="4.5"
+                    ry="3"
+                    transform="rotate(-20 142 67)"
+                  />
+                  <ellipse
+                    cx="153.5"
+                    cy="63"
+                    rx="4.5"
+                    ry="3"
+                    transform="rotate(-20 154 63)"
+                  />
+                </g>
+                <g stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="m85 161-3 47-24 32m49-80 15 38 14 30"
+                    fill="none"
+                    stroke="#28364f"
+                    stroke-width="21"
+                  />
+                  <path
+                    d="m56 235-8 10q-4 7 4 8h22q5-1 1-6l-11-7m65-16 1 13q1 7 9 5l17-6q5-3-1-6l-15-2"
+                    fill="#fff6ec"
+                  />
+                  <path
+                    d="m78 124-20-13-19-32m69 47 20-20 15 12"
+                    fill="none"
+                    stroke="#bf7e60"
+                    stroke-width="12"
+                  />
+                  <path
+                    d="m79 124-15-9m43 11 12-12"
+                    fill="none"
+                    stroke="#7660aa"
+                    stroke-width="20"
+                  />
+                  <path d="M79 114q15-8 29 2l10 43q-17 14-37 5l-8-24z" fill="#8770bb" />
+                  <path
+                    d="m84 152 14 4 11-3"
+                    fill="none"
+                    stroke="#b4a0d4"
+                    stroke-width="2"
+                  />
+                  <path d="m90 103 3 12" stroke="#bf7e60" stroke-width="12" />
+                  <ellipse
+                    cx="89"
+                    cy="91"
+                    rx="16"
+                    ry="20"
+                    transform="rotate(-14 89 91)"
+                    fill="#d79c79"
+                  />
+                  <path
+                    d="M73 95q-15-27 10-28 23-8 23 19-11-12-15-4-9 4-12 0l-1 13z"
+                    fill="#342d43"
+                  />
+                  <circle cx="73" cy="71" r="11" fill="#342d43" />
+                  <path
+                    d="m94 94 3 1m-9 7q5 3 9-1"
+                    fill="none"
+                    stroke="#754938"
+                    stroke-width="1.5"
+                  />
+                  <path
+                    d="m38 79-3-9m7 10 1-8m99 46 6 4"
+                    fill="none"
+                    stroke="#bf7e60"
+                    stroke-width="5"
+                  />
+                </g>
+                <path fill="url(#shade)" d="M0 0h180v320H0z" />
+              </svg>
+            </div>
+            <div class="mock-footer">
+              <div class="mock-author">
+                <span class="avatar" aria-hidden="true"></span
+                ><span data-i18n="creator"></span>
+              </div>
+              <button
+                type="button"
+                class="position author"
+                data-position="author"
+              ></button>
+            </div>
+          </div>
+          <button type="button" class="position top" data-position="top"></button>
+          <button type="button" class="position bottom" data-position="bottom"></button>
+        </div>
+      </section>
+      <form id="settings-form">
+        <h2 data-i18n="appearance"></h2>
+        <label class="color-control" for="text-color"
+          ><span data-i18n="textColor"></span
+          ><input type="color" id="text-color" value="#ffffff"
+        /></label>
+        <label class="size-control" for="font-size"
+          ><span data-i18n="fontSize"></span
+          ><output id="font-size-value" for="font-size">12 px</output></label
+        >
+        <input type="range" id="font-size" min="10" max="24" value="12" step="1" />
+        <label class="color-control background-control" for="background-color"
+          ><span data-i18n="backgroundColor"></span
+          ><input type="color" id="background-color" value="#111827"
+        /></label>
+        <label class="color-control border-control" for="border-color"
+          ><span data-i18n="borderColor"></span
+          ><input type="color" id="border-color" value="#374151"
+        /></label>
+        <div class="divider"></div>
+        <fieldset class="display-options">
+          <legend data-i18n="displayOptions"></legend>
+          <label class="relative-control" for="show-date"
+            ><input type="checkbox" id="show-date" checked /><span
+              ><strong data-i18n="showDate"></strong></span
+          ></label>
+          <label class="relative-control" for="show-relative"
+            ><input type="checkbox" id="show-relative" /><span
+              ><strong data-i18n="relative"></strong
+              ><small data-i18n="relativeHint"></small></span
+          ></label>
+          <label class="relative-control ai-control" for="show-ai-badge"
+            ><input type="checkbox" id="show-ai-badge" /><span
+              ><strong data-i18n="showAiBadge"></strong
+              ><small data-i18n="aiHint"></small></span
+          ></label>
+        </fieldset>
+      </form>
+    </main>
+    <footer>
+      <span class="status-dot" aria-hidden="true"></span>
+      <p id="status" role="status" aria-live="polite"></p>
+    </footer>
+  </body>
+</html>
