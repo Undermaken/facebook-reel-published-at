@@ -3,12 +3,19 @@ import {
   FACEBOOK_ORIGIN,
   getReelId,
   JsonFrames,
-  object,
   type ReelRecord,
 } from './data';
 import { RecordStore } from './bridge';
+import './zod-config';
+import * as z from 'zod';
+import { readEnvelope } from './schemas';
 
 const MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
+const urlSchema = z.union([z.string(), z.instanceof(URL).transform((url) => url.href)]);
+const requestUrlSchema = z.union([
+  urlSchema,
+  z.instanceof(Request).transform((request) => request.url),
+]);
 
 function isGraphql(url: string): boolean {
   try {
@@ -38,11 +45,10 @@ export function observeNetwork(emit: (records: ReelRecord[]) => void): () => voi
   const consume = (frames: unknown[], state: ReturnType<typeof collection>) => {
     if (!allowed()) return;
     for (const frame of frames) {
-      const envelope = object(frame);
-      const final = object(envelope?.extensions)?.is_final;
-      if (envelope?.hasNext === true || final === false) state.pending = true;
-      else if (envelope?.hasNext === false || final === true) state.pending = false;
-      if (Array.isArray(envelope?.errors) && envelope.errors.length) state.failed = true;
+      const envelope = readEnvelope(frame);
+      if (envelope.pending) state.pending = true;
+      else if (envelope.complete) state.pending = false;
+      state.failed ||= envelope.failed;
       const records = extractRecords(frame, true);
       state.records.add(records);
       const immediate = records.flatMap((record) => {
@@ -107,15 +113,7 @@ export function observeNetwork(emit: (records: ReelRecord[]) => void): () => voi
   const wrappedFetch: typeof fetch = function (this: Window, ...args) {
     const result = Reflect.apply(originalFetch, this, args) as Promise<Response>;
     try {
-      const input: unknown = args[0];
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.href
-            : input instanceof Request
-              ? input.url
-              : '';
+      const url = requestUrlSchema.safeParse(args[0]).data ?? '';
       if (allowed() && isGraphql(url)) {
         void result.then((response) => readResponse(response)).catch(() => {});
       }
@@ -139,12 +137,7 @@ export function observeNetwork(emit: (records: ReelRecord[]) => void): () => voi
     Reflect.apply(originalOpen, this, args);
     requestUrls.delete(this);
     try {
-      const url =
-        typeof args[1] === 'string'
-          ? args[1]
-          : args[1] instanceof URL
-            ? args[1].href
-            : '';
+      const url = urlSchema.safeParse(args[1]).data ?? '';
       if (allowed() && isGraphql(url)) requestUrls.set(this, url);
     } catch {
       /* Keep URL inspection separate from native open(). */

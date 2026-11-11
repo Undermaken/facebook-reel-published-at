@@ -1,50 +1,27 @@
-import {
-  FACEBOOK_ORIGIN,
-  isTimestamp,
-  isVideoId,
-  MAX_RECORDS,
-  mergeRecords,
-  object,
-  type ReelRecord,
-} from './data';
+import { FACEBOOK_ORIGIN, MAX_RECORDS, mergeRecords, type ReelRecord } from './data';
+import './zod-config';
+import * as z from 'zod';
+import { reelRecordSchema } from './schemas';
 
 export const CHANNEL = 'facebook-reel-date/v1';
+const recordsSchema = z
+  .custom<unknown[]>(Array.isArray)
+  .refine((records) => records.length <= MAX_RECORDS)
+  .pipe(z.array(reelRecordSchema));
+const channel = z.literal(CHANNEL);
+const messageSchema = z.discriminatedUnion('type', [
+  z.object({ channel, type: z.literal('ready'), enabled: z.boolean() }),
+  z.object({ channel, type: z.literal('navigation') }),
+  z.object({ channel, type: z.literal('records'), records: recordsSchema }),
+]);
 
-export function bridgeMessage(event: MessageEvent): Record<string, unknown> | null {
+export function bridgeMessage(event: MessageEvent): z.infer<typeof messageSchema> | null {
   if (event.source !== window || event.origin !== FACEBOOK_ORIGIN) return null;
-  const value = object(event.data);
-  return value?.channel === CHANNEL ? value : null;
+  return messageSchema.safeParse(event.data).data ?? null;
 }
 
 export function readRecords(value: unknown): ReelRecord[] {
-  if (!Array.isArray(value) || value.length > MAX_RECORDS) return [];
-  const records: ReelRecord[] = [];
-  for (const item of value) {
-    const record = object(item);
-    if (
-      !record ||
-      !isVideoId(record.videoId) ||
-      (record.publishTime !== undefined && !isTimestamp(record.publishTime)) ||
-      (record.aiGenerated !== undefined && typeof record.aiGenerated !== 'boolean') ||
-      (record.dateUnavailable !== undefined && record.dateUnavailable !== true) ||
-      (record.publishTime === undefined &&
-        record.aiGenerated === undefined &&
-        record.dateUnavailable !== true)
-    )
-      return [];
-    records.push({
-      videoId: record.videoId,
-      ...(isTimestamp(record.publishTime)
-        ? { publishTime: record.publishTime }
-        : record.dateUnavailable === true
-          ? { dateUnavailable: true }
-          : {}),
-      ...(typeof record.aiGenerated === 'boolean'
-        ? { aiGenerated: record.aiGenerated }
-        : {}),
-    });
-  }
-  return records;
+  return recordsSchema.safeParse(value).data ?? [];
 }
 
 export function post(

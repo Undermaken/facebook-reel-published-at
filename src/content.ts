@@ -1,162 +1,181 @@
-import { bridgeMessage, post, readRecords, RecordStore } from './bridge';
+import { bridgeMessage, post, RecordStore } from './bridge';
 import { extractRecords, getReelId, MAX_FRAME_CHARS } from './data';
 import { DateView } from './view';
 import { DEFAULT_SETTINGS, subscribeSettings } from './settings';
 
-const marker = Symbol.for('facebook-reel-date/content/v1');
-const state = window as unknown as Record<symbol, boolean>;
+const controllerKey = Symbol.for('facebook-reel-date/content/v1');
 
-if (!state[marker]) {
-  state[marker] = true;
-  const cache = new RecordStore();
-  const view = new DateView();
-  let activeId: string | null = null;
-  let timer: number | undefined;
-  let poll: number | undefined;
-  let suspended = false;
-  let seenScripts = new WeakSet<HTMLScriptElement>();
-  let settings = { ...DEFAULT_SETTINGS };
-  let stopSettings: (() => void) | undefined;
-  let settingsReady = false;
+class ReelDateController {
+  private readonly cache = new RecordStore();
+  private readonly view = new DateView();
+  private readonly observer: MutationObserver;
+  private activeId: string | null = null;
+  private refreshTimer: number | undefined;
+  private routePoll: number | undefined;
+  private suspended = false;
+  private seenScripts = new WeakSet<HTMLScriptElement>();
+  private settings = { ...DEFAULT_SETTINGS };
+  private stopSettings: (() => void) | undefined;
+  private settingsReady = false;
 
-  function announce() {
-    post('ready', [], settingsReady && settings.showDate && !suspended);
+  static start(): void {
+    const page = window as Window & { [controllerKey]?: ReelDateController };
+    page[controllerKey] ??= new ReelDateController();
   }
 
-  function startSettings() {
-    if (stopSettings) return;
-    settingsReady = false;
-    stopSettings = subscribeSettings((value) => {
-      settings = value;
-      settingsReady = true;
-      announce();
-      syncRoute();
+  private constructor() {
+    this.observer = new MutationObserver(this.onMutations);
+    window.addEventListener('message', this.onMessage);
+    window.addEventListener('popstate', this.syncRoute);
+    window.addEventListener('pagehide', this.suspend);
+    window.addEventListener('pageshow', this.resume);
+    this.resume();
+  }
+
+  private announce(): void {
+    post('ready', [], this.settingsReady && this.settings.showDate && !this.suspended);
+  }
+
+  private startSettings(): void {
+    if (this.stopSettings) return;
+    this.settingsReady = false;
+    this.stopSettings = subscribeSettings((value) => {
+      this.settings = value;
+      this.settingsReady = true;
+      this.announce();
+      this.syncRoute();
     });
   }
 
-  function scanJson() {
-    for (const script of [
-      ...document.querySelectorAll<HTMLScriptElement>('script[type="application/json"]'),
-    ].slice(0, 512)) {
-      if (seenScripts.has(script)) continue;
+  private scanJson(): void {
+    const scripts = document.querySelectorAll<HTMLScriptElement>(
+      'script[type="application/json"]',
+    );
+    for (const script of [...scripts].slice(0, 512)) {
+      if (this.seenScripts.has(script)) continue;
       const text = script.textContent;
       if (!text) continue;
       if (
         text.length > MAX_FRAME_CHARS ||
         (!text.includes('publish_time') && !text.includes('ai_generated_detected_info'))
       ) {
-        seenScripts.add(script);
+        this.seenScripts.add(script);
         continue;
       }
       try {
-        cache.add(extractRecords(JSON.parse(text)));
-        seenScripts.add(script);
+        this.cache.add(extractRecords(JSON.parse(text)));
+        this.seenScripts.add(script);
       } catch {
         /* A streamed script may not be complete yet. */
       }
     }
   }
 
-  function refresh() {
-    if (activeId && getReelId(location.href) === activeId)
-      view.render(cache.get(activeId), settings);
-    else view.clear();
+  private refresh(): void {
+    if (this.activeId && getReelId(location.href) === this.activeId)
+      this.view.render(this.cache.get(this.activeId), this.settings);
+    else this.view.clear();
   }
 
-  function schedule() {
-    if (!activeId || timer !== undefined) return;
-    timer = window.setTimeout(() => {
-      timer = undefined;
-      if (!activeId || getReelId(location.href) !== activeId) return;
-      scanJson();
-      refresh();
+  private scheduleRefresh = (): void => {
+    if (!this.activeId || this.refreshTimer !== undefined) return;
+    this.refreshTimer = window.setTimeout(() => {
+      this.refreshTimer = undefined;
+      if (!this.activeId || getReelId(location.href) !== this.activeId) return;
+      this.scanJson();
+      this.refresh();
     }, 80);
-  }
+  };
 
-  const observer = new MutationObserver((mutations) => {
+  private onMutations = (mutations: MutationRecord[]): void => {
     for (const mutation of mutations) {
       const element =
         mutation.target instanceof Element
           ? mutation.target
           : mutation.target.parentElement;
       const script = element?.closest('script');
-      if (script instanceof HTMLScriptElement) seenScripts.delete(script);
+      if (script instanceof HTMLScriptElement) this.seenScripts.delete(script);
     }
-    schedule();
-  });
-  function syncRoute() {
-    const routeId = suspended ? null : getReelId(location.href);
-    if (!routeId) cache.clear();
-    const id = suspended || !settingsReady || !settings.showDate ? null : routeId;
-    if (id === activeId) {
-      refresh();
+    this.scheduleRefresh();
+  };
+
+  private syncRoute = (): void => {
+    const routeId = this.suspended ? null : getReelId(location.href);
+    if (!routeId) this.cache.clear();
+    const id =
+      this.suspended || !this.settingsReady || !this.settings.showDate ? null : routeId;
+    if (id === this.activeId) {
+      this.refresh();
       return;
     }
-    const wasActive = activeId !== null;
-    activeId = id;
-    view.clear();
-    window.clearTimeout(timer);
-    timer = undefined;
+    const wasActive = this.activeId !== null;
+    this.activeId = id;
+    this.view.clear();
+    window.clearTimeout(this.refreshTimer);
+    this.refreshTimer = undefined;
     // Also synchronize MAIN when polling detects an exit that bypassed its hooks.
-    announce();
+    this.announce();
     if (!id) {
-      observer.disconnect();
-      window.removeEventListener('scroll', schedule, true);
-      window.removeEventListener('resize', schedule);
-      seenScripts = new WeakSet();
+      this.observer.disconnect();
+      window.removeEventListener('scroll', this.scheduleRefresh, true);
+      window.removeEventListener('resize', this.scheduleRefresh);
+      this.seenScripts = new WeakSet();
       return;
     }
     if (!wasActive) {
-      observer.observe(document, {
+      this.observer.observe(document, {
         childList: true,
         subtree: true,
         characterData: true,
         attributes: true,
         attributeFilter: ['href', 'src', 'poster', 'hidden', 'aria-hidden', 'role'],
       });
-      window.addEventListener('scroll', schedule, { capture: true, passive: true });
-      window.addEventListener('resize', schedule, { passive: true });
+      window.addEventListener('scroll', this.scheduleRefresh, {
+        capture: true,
+        passive: true,
+      });
+      window.addEventListener('resize', this.scheduleRefresh, { passive: true });
     }
-    schedule();
-  }
+    this.scheduleRefresh();
+  };
 
-  window.addEventListener('message', (event) => {
+  private onMessage = (event: MessageEvent): void => {
     const message = bridgeMessage(event);
     if (!message) return;
     if (message.type === 'navigation') {
-      syncRoute();
+      this.syncRoute();
       return;
     }
     if (
       message.type !== 'records' ||
-      suspended ||
-      !settingsReady ||
-      !settings.showDate ||
+      this.suspended ||
+      !this.settingsReady ||
+      !this.settings.showDate ||
       !getReelId(location.href)
     )
       return;
-    syncRoute();
-    cache.add(readRecords(message.records));
-    schedule();
-  });
-  window.addEventListener('popstate', syncRoute);
-  window.addEventListener('pagehide', () => {
-    suspended = true;
-    stopSettings?.();
-    stopSettings = undefined;
-    settingsReady = false;
-    announce();
-    window.clearInterval(poll);
-    poll = undefined;
-    syncRoute();
-  });
-  window.addEventListener('pageshow', () => {
-    suspended = false;
-    startSettings();
-    if (poll === undefined) poll = window.setInterval(syncRoute, 500);
-    syncRoute();
-  });
-  poll = window.setInterval(syncRoute, 500);
-  startSettings();
-  syncRoute();
+    this.syncRoute();
+    this.cache.add(message.records);
+    this.scheduleRefresh();
+  };
+
+  private suspend = (): void => {
+    this.suspended = true;
+    this.stopSettings?.();
+    this.stopSettings = undefined;
+    this.settingsReady = false;
+    this.announce();
+    window.clearInterval(this.routePoll);
+    this.routePoll = undefined;
+    this.syncRoute();
+  };
+
+  private resume = (): void => {
+    this.suspended = false;
+    this.startSettings();
+    this.routePoll ??= window.setInterval(this.syncRoute, 500);
+    this.syncRoute();
+  };
 }
+
+ReelDateController.start();

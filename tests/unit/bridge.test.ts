@@ -4,6 +4,44 @@ import { bridgeMessage, readRecords, RecordStore } from '../../src/bridge';
 afterEach(() => vi.useRealTimers());
 
 describe('bridge and bounded storage', () => {
+  it('validates each message variant before exposing it to the controller', () => {
+    const message = (data: unknown) =>
+      bridgeMessage(
+        new MessageEvent('message', {
+          origin: location.origin,
+          source: window,
+          data,
+        }),
+      );
+    const channel = 'facebook-reel-date/v1';
+    expect(message({ channel, type: 'ready', enabled: false })).toEqual({
+      channel,
+      type: 'ready',
+      enabled: false,
+    });
+    expect(message({ channel, type: 'navigation' })).toEqual({
+      channel,
+      type: 'navigation',
+    });
+    expect(message({ channel, type: 'records', records: [] })).toEqual({
+      channel,
+      type: 'records',
+      records: [],
+    });
+    for (const data of [
+      null,
+      [],
+      { channel, type: 'ready' },
+      { channel, type: 'ready', enabled: 'false' },
+      { channel, type: 'records' },
+      { channel, type: 'records', records: {} },
+      { channel, type: 'records', records: [{ videoId: '123456' }] },
+      { channel, type: 'unknown' },
+      { channel: 'other', type: 'navigation' },
+    ])
+      expect(message(data)).toBeNull();
+  });
+
   it('validates confirmed absence and replaces it when the real date arrives', () => {
     expect(readRecords([{ videoId: '123456', dateUnavailable: true }])).toEqual([
       { videoId: '123456', dateUnavailable: true },

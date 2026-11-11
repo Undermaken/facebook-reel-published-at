@@ -1,58 +1,40 @@
-export interface ReelRecord {
-  videoId: string;
-  publishTime?: number;
-  dateUnavailable?: true;
-  aiGenerated?: boolean;
-}
+import {
+  containerSchema,
+  readEnvelope,
+  storySchema,
+  trackingSchema,
+  type FacebookStory,
+  type ReelRecord,
+} from './schemas';
+export type { ReelRecord } from './schemas';
 
 export const FACEBOOK_ORIGIN = 'https://www.facebook.com';
 export const MAX_FRAME_CHARS = 2 * 1024 * 1024;
 export const MAX_RECORDS = 64;
 
-export function object(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
-export function isVideoId(value: unknown): value is string {
-  return typeof value === 'string' && /^[1-9]\d{0,29}$/.test(value);
-}
-
-export function isTimestamp(value: unknown): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isSafeInteger(value) &&
-    value >= 946684800 &&
-    value < 4102444800
-  );
-}
-
-function recordFromStory(node: Record<string, unknown>): ReelRecord | null {
-  const ai = object(node.ai_generated_detected_info)?.was_detected_as_ai_generated;
-  if (typeof node.tracking !== 'string' && typeof ai !== 'boolean') return null;
-  const identities = [node, object(node.video), object(node.media)];
-  if (Array.isArray(node.attachments)) {
-    for (const attachment of node.attachments.slice(0, 16))
-      identities.push(object(object(attachment)?.media));
-  }
+function recordFromStory(node: FacebookStory): ReelRecord | null {
+  const aiGenerated = node.ai_generated_detected_info?.was_detected_as_ai_generated;
+  if (node.tracking === undefined && aiGenerated === undefined) return null;
+  const identities = [
+    node,
+    node.video,
+    node.media,
+    ...(node.attachments ?? []).map((attachment) => attachment.media),
+  ];
   const ids = new Set<string>();
   const owners = new Set<string>();
   for (const item of identities) {
     if (!item) continue;
-    if (isVideoId(item.video_id)) ids.add(item.video_id);
-    if ((item !== node || item.__typename === 'Video') && isVideoId(item.id))
-      ids.add(item.id);
+    if (item.video_id) ids.add(item.video_id);
+    if ((item !== node || item.__typename === 'Video') && item.id) ids.add(item.id);
     for (const value of [item.shareable_url, item.url]) {
-      const id = typeof value === 'string' ? getReelId(value) : null;
+      const id = value ? getReelId(value) : null;
       if (id) ids.add(id);
     }
-    const owner = object(item.owner)?.id;
-    if (isVideoId(owner)) owners.add(owner);
+    if (item.owner?.id) owners.add(item.owner.id);
   }
   if (ids.size !== 1) return null;
   const videoId = ids.values().next().value!;
-  const aiGenerated = typeof ai === 'boolean' ? ai : undefined;
   const publication = publicationFromTracking(node.tracking, owners);
   if (
     !publication.publishTime &&
@@ -71,23 +53,16 @@ function publicationFromTracking(
   value: unknown,
   owners: Set<string>,
 ): Pick<ReelRecord, 'publishTime' | 'dateUnavailable'> {
-  if (typeof value !== 'string' || value.length > 65_536) return {};
-  let tracking: unknown;
-  try {
-    tracking = JSON.parse(value);
-  } catch {
-    return {};
-  }
-  const insights = object(object(tracking)?.page_insights);
-  if (!insights) return {};
+  const parsed = trackingSchema.safeParse(value);
+  if (!parsed.success) return {};
   const times = new Set<number>();
-  const contexts: (Record<string, unknown> | null)[] = [];
-  for (const [owner, insight] of Object.entries(insights).slice(0, 64)) {
-    if (owners.size && !owners.has(owner)) continue;
-    const context = object(object(insight)?.post_context);
-    contexts.push(context);
+  const contexts = Object.entries(parsed.data.page_insights)
+    .slice(0, 64)
+    .filter(([owner]) => !owners.size || owners.has(owner))
+    .map(([, insight]) => insight.post_context);
+  for (const context of contexts) {
     const time = context?.publish_time;
-    if (isTimestamp(time)) times.add(time);
+    if (time !== undefined && time !== null) times.add(time);
   }
   const publishTime = times.values().next().value;
   if (times.size === 1 && publishTime !== undefined) return { publishTime };
@@ -137,21 +112,19 @@ export function extractRecords(
   let visited = 0;
   while (pending.length && visited++ < 30_000) {
     const entry = pending.pop();
-    if (
-      !entry ||
-      entry.depth > 80 ||
-      !entry.value ||
-      typeof entry.value !== 'object' ||
-      seen.has(entry.value)
-    )
-      continue;
-    seen.add(entry.value);
-    const node = object(entry.value);
+    if (!entry || entry.depth > 80) continue;
+    const container = containerSchema.parse(entry.value);
+    if (!container || seen.has(container)) continue;
+    seen.add(container);
+    const node =
+      'tracking' in container || 'ai_generated_detected_info' in container
+        ? storySchema.safeParse(container).data
+        : undefined;
+    const envelope = readEnvelope(container);
     const incomplete =
       entry.incomplete ||
-      (Array.isArray(node?.errors) && node.errors.length > 0) ||
-      (!(includePendingAbsence && entry.depth === 0) &&
-        (node?.hasNext === true || object(node?.extensions)?.is_final === false));
+      envelope.failed ||
+      (!(includePendingAbsence && entry.depth === 0) && envelope.pending);
     let record = node ? recordFromStory(node) : null;
     if (record?.dateUnavailable && incomplete) {
       record =
@@ -162,15 +135,14 @@ export function extractRecords(
     if (record && (found.has(record.videoId) || found.size < MAX_RECORDS)) {
       found.set(record.videoId, mergeRecords(found.get(record.videoId), record));
     }
-    const children = Object.values(entry.value);
+    const children = Object.values(container);
     for (
       let index = children.length - 1;
       index >= 0 && pending.length < 30_000;
       index--
     ) {
-      const child: unknown = children[index];
-      if (child && typeof child === 'object')
-        pending.push({ value: child, depth: entry.depth + 1, incomplete });
+      const child = containerSchema.parse(children[index]);
+      if (child) pending.push({ value: child, depth: entry.depth + 1, incomplete });
     }
   }
   return [...found.values()].flatMap((record) => record ?? []);

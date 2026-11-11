@@ -8,6 +8,7 @@ for (const file of ['manifest.json', 'popup.html', 'popup.css']) {
 }
 await cp('_locales', 'dist/_locales', { recursive: true });
 await copyFile('node_modules/date-fns/LICENSE.md', 'dist/DATE_FNS_LICENSE.txt');
+await copyFile('node_modules/zod/LICENSE', 'dist/ZOD_LICENSE.txt');
 const options = {
   entryPoints: ['src/main.ts', 'src/content.ts', 'src/popup.ts'],
   bundle: true,

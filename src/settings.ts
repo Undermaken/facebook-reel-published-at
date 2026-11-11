@@ -1,53 +1,28 @@
-export type Position = 'author' | 'top' | 'bottom';
+import './zod-config';
+import * as z from 'zod';
 
-export interface Settings {
-  position: Position;
-  textColor: string;
-  fontSize: number;
-  backgroundColor: string;
-  borderColor: string;
-  showRelative: boolean;
-  showAiBadge: boolean;
-  showDate: boolean;
-}
-
-export const DEFAULT_SETTINGS: Settings = {
-  position: 'author',
-  textColor: '#ffffff',
-  fontSize: 12,
-  backgroundColor: '#111827',
-  borderColor: '#374151',
-  showRelative: false,
-  showAiBadge: false,
-  showDate: true,
-};
+const colorSchema = z
+  .string()
+  .regex(/^#[0-9a-f]{6}$/i)
+  .toLowerCase();
+const settingsSchema = z.object({
+  position: z.enum(['author', 'top', 'bottom']).catch('author'),
+  textColor: colorSchema.catch('#ffffff'),
+  fontSize: z.int().min(10).max(24).catch(12),
+  backgroundColor: colorSchema.catch('#111827'),
+  borderColor: colorSchema.catch('#374151'),
+  showRelative: z.boolean().catch(false),
+  showAiBadge: z.boolean().catch(false),
+  showDate: z.boolean().catch(true),
+});
+export type Settings = z.infer<typeof settingsSchema>;
+export type Position = Settings['position'];
+export const DEFAULT_SETTINGS: Settings = settingsSchema.parse({});
 
 export const SETTINGS_KEY = 'appearance';
 
 export function normalizeSettings(value: unknown): Settings {
-  const input =
-    value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-  const color = (candidate: unknown, fallback: string) =>
-    typeof candidate === 'string' && /^#[0-9a-f]{6}$/i.test(candidate)
-      ? candidate.toLowerCase()
-      : fallback;
-  return {
-    position:
-      input.position === 'top' || input.position === 'bottom' ? input.position : 'author',
-    textColor: color(input.textColor, DEFAULT_SETTINGS.textColor),
-    backgroundColor: color(input.backgroundColor, DEFAULT_SETTINGS.backgroundColor),
-    borderColor: color(input.borderColor, DEFAULT_SETTINGS.borderColor),
-    fontSize:
-      typeof input.fontSize === 'number' &&
-      Number.isInteger(input.fontSize) &&
-      input.fontSize >= 10 &&
-      input.fontSize <= 24
-        ? input.fontSize
-        : DEFAULT_SETTINGS.fontSize,
-    showRelative: input.showRelative === true,
-    showAiBadge: input.showAiBadge === true,
-    showDate: input.showDate !== false,
-  };
+  return settingsSchema.safeParse(value).data ?? { ...DEFAULT_SETTINGS };
 }
 
 export function subscribeSettings(onChange: (settings: Settings) => void): () => void {

@@ -104,11 +104,14 @@ log into Facebook or use your browser profile. Changes to `manifest.json`,
 `popup.html` or `_locales` require a full `npm run build`, including while
 `npm run dev` is running.
 
-The only runtime dependency is date-fns, bundled locally into the extension with
-its MIT license in `dist/DATE_FNS_LICENSE.txt`.
-Its `intlFormat` and `intlFormatDistance` helpers format exact dates and relative
-age using the browser's locale data. No code, fonts or assets are downloaded at
-runtime. The extension has no backend, analytics or frontend framework.
+The runtime dependencies are date-fns and Zod, bundled locally with their MIT
+licenses in `dist/DATE_FNS_LICENSE.txt` and `dist/ZOD_LICENSE.txt`. date-fns's
+`intlFormat` and `intlFormatDistance` helpers format exact dates and relative age
+using the browser's locale data. Zod validates Facebook metadata, bridge messages
+and saved preferences, with TypeScript types inferred from the schemas. Its JIT
+compiler is disabled to respect Manifest V3's restriction on runtime code
+generation. No code, fonts or assets are downloaded at runtime. The extension has
+no backend, analytics or frontend framework.
 The `minimatch` override pins the patched version used by the lint tooling.
 
 The local Git repository starts on `main`. `.gitignore` excludes installed packages,
@@ -160,7 +163,10 @@ The extension uses two static content scripts at `document_start`:
   without changing requests or their bodies.
 - `content.js`, in the `ISOLATED` world, validates the small data bridge, reads
   initial metadata from `script[type="application/json"]`, and manages the date.
-  It never evaluates page scripts or reads React's private properties.
+  `ReelDateController` owns the settings, cache, view, observer and timers. Its
+  `start()` method creates one instance per page, including after reinjection.
+  Page hiding suspends its work; restoration starts one settings subscription and
+  one route timer. It never evaluates page scripts or reads React's private properties.
 
 Static `world: "MAIN"` requires Chrome 111+. MAIN code shares the page's JavaScript
 environment, so the page can interfere with it. See
@@ -199,8 +205,10 @@ or invoke storage operations.
 The MAIN script sends only a video ID and optional validated publication time,
 confirmed-absence flag and AI boolean through
 `window.postMessage`, with an exact target origin and a versioned channel.
-The isolated script checks `event.source`, `event.origin`, the channel, array size,
-ID syntax, timestamp units and strict boolean fields. Values become `textContent`,
+The isolated script checks `event.source` and `event.origin`, then uses a Zod
+discriminated union to validate the channel and each message's payload. Record
+validation bounds the array before parsing its items and checks ID syntax,
+timestamp units and strict boolean fields. Values become `textContent`,
 never HTML. A readiness message includes a boolean to pause/resume observation;
 it cannot change stored settings, call privileged extension APIs or relay requests.
 

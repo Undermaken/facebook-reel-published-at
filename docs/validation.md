@@ -1,15 +1,15 @@
 # Validation record
 
-Verified on 9 November 2026 with Node 26.3.1 and Playwright 1.65.0 using Chromium
+Verified on 11 November 2026 with Node 26.3.1 and Playwright 1.65.0 using Chromium
 158.0.8127.18 in a separate temporary browser profile.
 
 ## Completed checks
 
 - A clean `npm ci` completed using the supplied lockfile. The dependency
   audit reported zero known vulnerabilities at the time of installation.
-- `npm run check` passed: ESLint, strict TypeScript, Prettier, 49 unit tests and
+- `npm run check` passed: ESLint, strict TypeScript, Prettier, 51 unit tests and
   the production build.
-- `npm run test:browser` passed all 29 tests against the unpacked MV3 extension.
+- `npm run test:browser` passed all 30 tests against the unpacked MV3 extension.
 - The build includes the content scripts, settings popup, styles and five manifest
   translations. The only API permission is storage for appearance preferences.
 - A scan of project files found none of the credential values from the supplied
@@ -31,6 +31,12 @@ saving time, bridge validation, cache eviction, expiry and conflicting dates.
 They also cover five locale families, regional variants, English fallback,
 localized relative weeks/days and plurals, preference validation and migration of
 older settings without a border color.
+
+The Zod refactor adds checks for each bridge message variant and verifies that
+reinjection creates no second controller, settings subscription or route timer.
+Repeated page restoration starts only one subscription and timer. Network parsing
+also runs in Chromium under a Content Security Policy that forbids runtime code
+generation, without script errors or evaluation-related CSP violations.
 
 Browser tests cover initial inline JSON, fetch response preservation, text and JSON
 XHR, SPA entry and exit, delayed DOM, consecutive Reels, duplicate prevention,
@@ -71,6 +77,10 @@ The original GraphQL attachment was parsed locally and produced four distinct
 publication records from its 18 envelopes. The server HTML produced two records;
 the later rendered body produced six. The observed `h2` author inside the Reel's
 dialog informed the DOM fixture and insertion point.
+
+After the Zod refactor, both original HTML attachments were parsed again and
+compared with the previous parser. Every extracted record matched, including the
+same two and six distinct video IDs. Private attachments remain outside the repository.
 
 ## Limits of this validation
 

@@ -60,6 +60,31 @@ test('observes fetch without consuming or changing the response', async () => {
   await expect(page.locator('[data-fb-reel-date]')).toHaveCount(1);
 });
 
+test('validates network data under a CSP that forbids runtime code generation', async () => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (
+      message.type() === 'error' &&
+      /eval|content security policy/i.test(message.text())
+    )
+      errors.push(message.text());
+  });
+  await page.route('https://www.facebook.com/reel/**', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      headers: { 'Content-Security-Policy': "script-src 'self'; object-src 'none'" },
+      body: html,
+    }),
+  );
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  await page.evaluate(async () => {
+    await fetch('/api/graphql/');
+  });
+  await expect(page.locator('[data-fb-reel-date]')).toContainText('15:16:03');
+  expect(errors).toEqual([]);
+});
+
 test('observes both text and JSON XMLHttpRequest responses', async () => {
   await page.goto('https://www.facebook.com/reel/5532624203628819/');
   const received = await page.evaluate(

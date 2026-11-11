@@ -47,7 +47,7 @@ if (!state[marker]) {
   window.addEventListener('popstate', syncRoute);
   window.addEventListener('message', (event) => {
     const message = bridgeMessage(event);
-    if (message?.type !== 'ready' || typeof message.enabled !== 'boolean') return;
+    if (message?.type !== 'ready') return;
     enabled = message.enabled;
     syncRoute();
     if (
