@@ -7,6 +7,7 @@ for (const file of ['manifest.json', 'popup.html', 'popup.css']) {
   await copyFile(file, `dist/${file}`);
 }
 await cp('_locales', 'dist/_locales', { recursive: true });
+await cp('icons', 'dist/icons', { recursive: true });
 await copyFile('node_modules/date-fns/LICENSE.md', 'dist/DATE_FNS_LICENSE.txt');
 await copyFile('node_modules/zod/LICENSE', 'dist/ZOD_LICENSE.txt');
 const options = {

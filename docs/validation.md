@@ -1,6 +1,6 @@
 # Validation record
 
-Verified on 11 November 2026 with Node 26.3.1 and Playwright 1.65.0 using Chromium
+Verified on 12 November 2026 with Node 26.3.1 and Playwright 1.65.0 using Chromium
 158.0.8127.18 in a separate temporary browser profile.
 
 ## Completed checks
@@ -10,8 +10,11 @@ Verified on 11 November 2026 with Node 26.3.1 and Playwright 1.65.0 using Chromi
 - `npm run check` passed: ESLint, strict TypeScript, Prettier, 51 unit tests and
   the production build.
 - `npm run test:browser` passed all 30 tests against the unpacked MV3 extension.
-- The build includes the content scripts, settings popup, styles and five manifest
-  translations. The only API permission is storage for appearance preferences.
+- The build includes the content scripts, settings popup, styles, five manifest
+  translations and the original calendar-and-play icon. The 16, 32, 48 and 128 px
+  PNGs in `dist` match the selected artwork, and the manifest points the toolbar
+  and extension manager to the appropriate sizes. The only API permission is
+  storage for appearance preferences.
 - A scan of project files found none of the credential values from the supplied
   cURL. Full private attachments are not included in the project.
 - The rendered label was visually inspected in a sanitized browser fixture. It

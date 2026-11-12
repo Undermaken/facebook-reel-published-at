@@ -35,6 +35,11 @@ Pin it to the toolbar for quicker access. To update after a code change, build
 again, click the extension's reload button in `chrome://extensions`, then reload
 Facebook. To uninstall, use **Remove** on that page.
 
+The calendar-and-play icon appears in the toolbar and extension manager. Its
+editable source is `icons/source.svg`; Chrome loads the matching PNG sizes from
+`icons/icon-16.png`, `icon-32.png`, `icon-48.png` and `icon-128.png`. The design is
+original and does not contain Facebook's logo or the isolated "f" mark.
+
 ## Settings
 
 The **Display** section groups all three checkboxes:
