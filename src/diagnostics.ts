@@ -20,6 +20,8 @@ const detail: Partial<Record<DiagnosticStatus, string>> = {
 export class MissingBadgeDiagnostics {
   private reelId: string | null = null;
   private missingSince: number | null = null;
+  private currentStatus: DiagnosticStatus | null = null;
+  private pendingReport: number | undefined;
   private reported = new Set<DiagnosticStatus>();
 
   constructor(
@@ -30,25 +32,50 @@ export class MissingBadgeDiagnostics {
     },
   ) {}
 
+  private clearPending(): void {
+    window.clearTimeout(this.pendingReport);
+    this.pendingReport = undefined;
+  }
+
+  private reportOnce(status: DiagnosticStatus): void {
+    if (this.reported.has(status)) return;
+    this.reported.add(status);
+    this.report(status);
+  }
+
   update(reelId: string | null, status: DiagnosticStatus, now = Date.now()): void {
     if (!reelId || status === 'inactive') {
+      this.clearPending();
       this.reelId = null;
       this.missingSince = null;
+      this.currentStatus = null;
       this.reported.clear();
       return;
     }
     if (reelId !== this.reelId) {
+      this.clearPending();
       this.reelId = reelId;
       this.missingSince = null;
+      this.currentStatus = null;
       this.reported.clear();
     }
     if (status === 'shown') {
+      this.clearPending();
       this.missingSince = null;
+      this.currentStatus = null;
       return;
     }
+    this.currentStatus = status;
     this.missingSince ??= now;
-    if (now - this.missingSince < 5_000 || this.reported.has(status)) return;
-    this.reported.add(status);
-    this.report(status);
+    const remaining = 5_000 - (now - this.missingSince);
+    if (remaining > 0) {
+      this.pendingReport ??= window.setTimeout(() => {
+        this.pendingReport = undefined;
+        if (this.currentStatus) this.reportOnce(this.currentStatus);
+      }, remaining);
+      return;
+    }
+    this.clearPending();
+    this.reportOnce(status);
   }
 }

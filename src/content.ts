@@ -5,8 +5,10 @@ import { DEFAULT_SETTINGS, subscribeSettings } from './settings';
 import { MissingBadgeDiagnostics } from './diagnostics';
 
 const controllerKey = Symbol.for('facebook-reel-date/content/v1');
+const takeoverEvent = 'facebook-reel-date/controller-start';
 
 class ReelDateController {
+  private readonly instanceId = crypto.randomUUID();
   private readonly cache = new RecordStore();
   private readonly view = new DateView();
   private readonly diagnostics = new MissingBadgeDiagnostics();
@@ -15,6 +17,7 @@ class ReelDateController {
   private refreshTimer: number | undefined;
   private routePoll: number | undefined;
   private suspended = false;
+  private disposed = false;
   private seenScripts = new WeakSet<HTMLScriptElement>();
   private settings = { ...DEFAULT_SETTINGS };
   private stopSettings: (() => void) | undefined;
@@ -37,13 +40,19 @@ class ReelDateController {
 
   private constructor() {
     this.observer = new MutationObserver(this.onMutations);
+    document.addEventListener(takeoverEvent, this.onTakeover);
     window.addEventListener('message', this.onMessage);
     window.addEventListener('popstate', this.syncRoute);
     window.addEventListener('pagehide', this.suspend);
     window.addEventListener('pageshow', this.resume);
     chrome.runtime.onMessage.addListener(this.onExtensionMessage);
+    document.dispatchEvent(new CustomEvent(takeoverEvent, { detail: this.instanceId }));
     this.resume();
   }
+
+  private onTakeover = (event: Event): void => {
+    if ((event as CustomEvent<string>).detail !== this.instanceId) this.dispose();
+  };
 
   private onExtensionMessage = (
     message: unknown,
@@ -55,12 +64,32 @@ class ReelDateController {
   };
 
   dispose(): void {
-    this.suspend();
+    if (this.disposed) return;
+    this.disposed = true;
+    this.suspended = true;
+    window.clearInterval(this.routePoll);
+    window.clearTimeout(this.refreshTimer);
+    this.observer.disconnect();
+    this.view.clear();
+    this.diagnostics.update(null, 'inactive');
+    window.removeEventListener('scroll', this.scheduleRefresh, true);
+    window.removeEventListener('resize', this.scheduleRefresh);
+    document.removeEventListener(takeoverEvent, this.onTakeover);
     window.removeEventListener('message', this.onMessage);
     window.removeEventListener('popstate', this.syncRoute);
     window.removeEventListener('pagehide', this.suspend);
     window.removeEventListener('pageshow', this.resume);
-    chrome.runtime.onMessage.removeListener(this.onExtensionMessage);
+    try {
+      this.stopSettings?.();
+    } catch {
+      // The old extension context may already be invalidated.
+    }
+    this.stopSettings = undefined;
+    try {
+      chrome.runtime.onMessage.removeListener(this.onExtensionMessage);
+    } catch {
+      // The old extension context may already be invalidated.
+    }
   }
 
   private announce(): void {
@@ -74,7 +103,9 @@ class ReelDateController {
       this.settings = value;
       this.settingsReady = true;
       this.announce();
+      const activeId = this.activeId;
       this.syncRoute();
+      if (this.activeId && this.activeId === activeId) this.refresh();
     });
   }
 
@@ -118,7 +149,7 @@ class ReelDateController {
   }
 
   private scheduleRefresh = (): void => {
-    if (!this.activeId || this.refreshTimer !== undefined) return;
+    if (this.disposed || !this.activeId || this.refreshTimer !== undefined) return;
     this.refreshTimer = window.setTimeout(() => {
       this.refreshTimer = undefined;
       if (!this.activeId || getReelId(location.href) !== this.activeId) return;
@@ -140,14 +171,12 @@ class ReelDateController {
   };
 
   private syncRoute = (): void => {
+    if (this.disposed) return;
     const routeId = this.suspended ? null : getReelId(location.href);
     if (!routeId) this.cache.clear();
     const id =
       this.suspended || !this.settingsReady || !this.settings.showDate ? null : routeId;
-    if (id === this.activeId) {
-      this.refresh();
-      return;
-    }
+    if (id === this.activeId) return;
     const wasActive = this.activeId !== null;
     this.activeId = id;
     if (!id) this.diagnostics.update(null, 'inactive');
@@ -181,6 +210,7 @@ class ReelDateController {
   };
 
   private onMessage = (event: MessageEvent): void => {
+    if (this.disposed) return;
     const message = bridgeMessage(event);
     if (!message) return;
     if (message.type === 'navigation') {
@@ -212,6 +242,7 @@ class ReelDateController {
   };
 
   private resume = (): void => {
+    if (this.disposed) return;
     this.suspended = false;
     this.startSettings();
     this.routePoll ??= window.setInterval(this.syncRoute, 500);

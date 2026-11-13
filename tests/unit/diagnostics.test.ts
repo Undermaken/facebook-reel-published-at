@@ -1,7 +1,24 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MissingBadgeDiagnostics } from '../../src/diagnostics';
 
+afterEach(() => vi.useRealTimers());
+
 describe('MissingBadgeDiagnostics', () => {
+  it('reports a persistent missing badge without repeated refreshes', () => {
+    vi.useFakeTimers();
+    const report = vi.fn();
+    const diagnostics = new MissingBadgeDiagnostics(report);
+
+    diagnostics.update('111', 'metadata_missing');
+    vi.advanceTimersByTime(4_999);
+    expect(report).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(report).toHaveBeenCalledExactlyOnceWith('metadata_missing');
+
+    vi.advanceTimersByTime(10_000);
+    expect(report).toHaveBeenCalledTimes(1);
+  });
+
   it('reports a persistent missing badge once per reason and Reel', () => {
     const report = vi.fn();
     const diagnostics = new MissingBadgeDiagnostics(report);

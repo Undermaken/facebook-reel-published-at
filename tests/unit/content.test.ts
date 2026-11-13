@@ -2,6 +2,8 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 afterEach(() => {
   window.dispatchEvent(new PageTransitionEvent('pagehide'));
+  window.history.replaceState({}, '', '/');
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -49,4 +51,32 @@ it('replaces a stale controller without duplicate subscriptions or timers', asyn
   expect(get).toHaveBeenCalledTimes(3);
   expect(addListener).toHaveBeenCalledTimes(3);
   expect(setInterval).toHaveBeenCalledTimes(3);
+});
+
+it('does not rescan a static Reel on each route poll', async () => {
+  vi.useFakeTimers();
+  window.history.replaceState({}, '', '/reel/5532624203628819/');
+  vi.stubGlobal('chrome', {
+    storage: {
+      local: { get: vi.fn().mockResolvedValue({ appearance: { showDate: true } }) },
+      onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
+    },
+    runtime: {
+      id: 'test-extension',
+      onMessage: { addListener: vi.fn(), removeListener: vi.fn() },
+    },
+  });
+  vi.resetModules();
+  const { DateView } = await import('../../src/view');
+  const render = vi.spyOn(DateView.prototype, 'render');
+  await import('../../src/content');
+  await Promise.resolve();
+  await Promise.resolve();
+  vi.advanceTimersByTime(100);
+  const initialRenders = render.mock.calls.length;
+  expect(initialRenders).toBeGreaterThan(0);
+
+  vi.advanceTimersByTime(1_500);
+
+  expect(render).toHaveBeenCalledTimes(initialRenders);
 });
