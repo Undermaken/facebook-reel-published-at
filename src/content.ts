@@ -20,7 +20,17 @@ class ReelDateController {
 
   static start(): void {
     const page = window as Window & { [controllerKey]?: ReelDateController };
-    page[controllerKey] ??= new ReelDateController();
+    const previous = page[controllerKey] as unknown as
+      { dispose?: () => void; suspend?: () => void } | undefined;
+    if (previous) {
+      try {
+        if (previous.dispose) previous.dispose();
+        else previous.suspend?.();
+      } catch {
+        // A controller from an invalidated extension may reject API cleanup.
+      }
+    }
+    page[controllerKey] = new ReelDateController();
   }
 
   private constructor() {
@@ -29,7 +39,26 @@ class ReelDateController {
     window.addEventListener('popstate', this.syncRoute);
     window.addEventListener('pagehide', this.suspend);
     window.addEventListener('pageshow', this.resume);
+    chrome.runtime.onMessage.addListener(this.onExtensionMessage);
     this.resume();
+  }
+
+  private onExtensionMessage = (
+    message: unknown,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response: string) => void,
+  ): void => {
+    if (message === 'facebook-reel-date/ping' && sender.id === chrome.runtime.id)
+      sendResponse('ready');
+  };
+
+  dispose(): void {
+    this.suspend();
+    window.removeEventListener('message', this.onMessage);
+    window.removeEventListener('popstate', this.syncRoute);
+    window.removeEventListener('pagehide', this.suspend);
+    window.removeEventListener('pageshow', this.resume);
+    chrome.runtime.onMessage.removeListener(this.onExtensionMessage);
   }
 
   private announce(): void {

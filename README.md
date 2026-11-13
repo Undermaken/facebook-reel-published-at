@@ -32,8 +32,11 @@ npm run build
 
 Click the extension in Chrome's toolbar or Extensions menu to open its settings.
 Pin it to the toolbar for quicker access. To update after a code change, build
-again, click the extension's reload button in `chrome://extensions`, then reload
-Facebook. To uninstall, use **Remove** on that page.
+again and click the extension's reload button in `chrome://extensions`. Opening
+settings reconnects the date display in Reel tabs that stayed open during the
+extension reload. Reload Facebook to apply changes to the page-world network
+observer or recover metadata fetched while the extension was unavailable. To
+uninstall, use **Remove** on that page.
 
 The calendar-and-play icon appears in the toolbar and extension manager. Its
 editable source is `icons/source.svg`; Chrome loads the matching PNG sizes from
@@ -71,7 +74,10 @@ fa". This line updates once per minute while the Reel is visible.
 
 The mockup shows a local illustration of a dancer, with the author near the bottom
 of the frame. It uses the same label renderer as the real Reel, at a smaller scale.
-Preferences save automatically and update open Reel tabs without reloading. Only
+Preferences save automatically and update open Reel tabs without reloading. Opening
+settings also reconnects the date display in Reel tabs whose content script was
+left behind by an extension reload; live tabs keep their existing metadata and are
+not reinjected. Only
 appearance preferences persist locally. Reel IDs and publication metadata
 remain in memory. The default is below the author, white 12 px text on a dark
 background and a subtle gray border, with relative age off. Preferences use
@@ -169,7 +175,7 @@ The extension uses two static content scripts at `document_start`:
 - `content.js`, in the `ISOLATED` world, validates the small data bridge, reads
   initial metadata from `script[type="application/json"]`, and manages the date.
   `ReelDateController` owns the settings, cache, view, observer and timers. Its
-  `start()` method creates one instance per page, including after reinjection.
+  `start()` method replaces any previous instance when a stale tab is reinjected.
   Page hiding suspends its work; restoration starts one settings subscription and
   one route timer. It never evaluates page scripts or reads React's private properties.
 
@@ -194,16 +200,21 @@ The bootstrap also watches local display preferences. MAIN waits for the isolate
 script to load them before observing responses, so a saved disabled preference
 does not briefly activate interception at page startup.
 
-The only API permission is **`storage`**, used by the popup and isolated content
-script to save appearance preferences with `chrome.storage.local`. Changes propagate
-through `storage.onChanged`. See the
-[Chrome storage API](https://developer.chrome.com/docs/extensions/reference/api/storage).
+The **`storage`** permission lets the popup and isolated content script save
+appearance preferences with `chrome.storage.local`; changes propagate through
+`storage.onChanged`. The **`scripting`** permission and a host permission limited to
+`https://www.facebook.com/*` let the popup reconnect already-open Reel tabs after
+an extension reload. On opening settings, it pings each Reel tab and reinjects the
+two scripts only if no current content script responds. This also needs
+`chrome.tabs.query` and `chrome.tabs.sendMessage`, but not the broad `tabs` API
+permission. See the [Chrome storage API](https://developer.chrome.com/docs/extensions/reference/api/storage),
+[scripting API](https://developer.chrome.com/docs/extensions/reference/api/scripting),
+and [tabs API](https://developer.chrome.com/docs/extensions/reference/api/tabs).
 
-There are no `host_permissions`, background workers, `web_accessible_resources`,
-`debugger`, `webRequest`, cookies, tabs, clipboard or notification permissions.
-Chrome still reports site access for `www.facebook.com` because the manifest
-declares content scripts there. The page-world bridge cannot change preferences
-or invoke storage operations.
+There are no background workers, `web_accessible_resources`, `debugger`,
+`webRequest`, cookies, broad `tabs`, clipboard or notification permissions. Site
+access remains limited to `www.facebook.com`; the page-world bridge cannot change
+preferences or invoke storage operations.
 
 ### Bridge and resource limits
 
@@ -310,8 +321,11 @@ extra UI. Confirmed absence is displayed only under the explicit conditions abov
 - Below-frame placement is conservative on very small viewports or unusual player
   transforms. If the label cannot fit while keeping the video usable, it is hidden
   until space is available. The extension does not wrap or reparent Facebook's DOM.
-- Changing extension code or reloading the extension requires refreshing an
-  already-open Facebook tab.
+- Opening settings reconnects the date display in already-open Reel tabs after an
+  extension reload. An existing page-world network observer can continue running
+  its previous code because its page-level marker prevents a second installation.
+  Reload Facebook to apply network-observer code changes or recover metadata fetched
+  while the extension was unavailable.
 
 The automated Chromium tests use realistic reduced fixtures and the real extension
 loader. They do not constitute a live authenticated Facebook session. The original

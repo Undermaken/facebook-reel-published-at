@@ -138,6 +138,50 @@ test('places the date at the top or outside the bottom and restores the player',
   expect((await video.boundingBox())!.height).toBeCloseTo(before.height, 0);
 });
 
+test('moves the label in a tab that stayed open while the extension restarted', async () => {
+  await openExtension();
+  const badge = page.locator('[data-fb-reel-date]');
+  await expect(badge).toHaveAttribute('data-position', 'author');
+  const extensionsPage = await context.newPage();
+  await extensionsPage.goto('chrome://extensions/');
+  const item = extensionsPage.locator('extensions-item');
+  const toggle = item.locator('#enableToggle');
+  await toggle.click();
+  await expect(item.locator('#card')).toHaveClass('disabled');
+  await toggle.click();
+  await expect(item.locator('#card')).toHaveClass('enabled');
+  const popup = await openPopup();
+  await popup.locator('[data-position="top"]').click();
+  await expect
+    .poll(() => popup.evaluate(() => chrome.storage.local.get('appearance')))
+    .toMatchObject({ appearance: { position: 'top' } });
+  await expect(badge).toHaveAttribute('data-position', 'top');
+  await page.waitForTimeout(650);
+  await expect(badge).toHaveCount(1);
+  await expect(badge).toHaveAttribute('data-position', 'top');
+  await popup.locator('[data-position="bottom"]').click();
+  await expect(badge).toHaveAttribute('data-position', 'bottom');
+  await page.route('https://www.facebook.com/api/graphql/', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ data: story('123456') }),
+    }),
+  );
+  await page.evaluate(
+    (body) => {
+      history.pushState({}, '', '/reel/123456/');
+      document.body.innerHTML = body;
+    },
+    viewer('Next author', 'next'),
+  );
+  await page.evaluate(async () => {
+    await (await fetch('/api/graphql/')).text();
+  });
+  await expect(badge).toContainText('15 ottobre 2026');
+  await expect(badge).toHaveAttribute('data-position', 'bottom');
+  await expect(badge).toHaveCount(1);
+});
+
 test('keeps bottom placement stable beside a smaller visible Reel', async () => {
   await openExtension('fr-FR');
   await page.evaluate(() => {
