@@ -61,7 +61,8 @@ The logs contain reason codes, not GraphQL response bodies or Reel URLs.
 - `target_missing`: the extension could not identify one visible player and its
   creator heading. Facebook's layout may have changed.
 - `stale_player` or `reel_mismatch`: navigation is showing a player associated with
-  another Reel. Check whether the warning disappears once the next Reel loads.
+  another Reel. `reel_mismatch` applies only when the video itself is inside a link
+  to a different Reel. Check whether the warning disappears once the next Reel loads.
 - `placement_failed`: the selected position did not fit the visible player. Try
   another position or a larger browser window.
 - `render_failed`, `response_inspection_failed`, or `xhr_inspection_failed`: an

@@ -12,7 +12,7 @@ const detail: Partial<Record<DiagnosticStatus, string>> = {
   metadata_missing: 'No matching publication metadata has arrived for this Reel.',
   target_missing: 'No unique visible Reel video and creator heading were found.',
   stale_player: 'The page still shows the previous Reel player during navigation.',
-  reel_mismatch: 'The visible player links to a different Reel.',
+  reel_mismatch: 'The video itself links to a different Reel.',
   placement_failed: 'The selected position could not fit the visible player.',
   render_failed: 'An unexpected error prevented the date box from rendering.',
 };

@@ -99,10 +99,10 @@ export class DateView {
       return 'target_missing';
     }
     const { video, heading, container } = target;
-    const reelLinks = [...container.querySelectorAll<HTMLAnchorElement>('a[href]')]
-      .map((link) => getReelId(link.href))
-      .filter(Boolean);
-    if (reelLinks.some((id) => id !== routeId)) {
+    const linkedReelId = getReelId(
+      video.closest<HTMLAnchorElement>('a[href]')?.href ?? '',
+    );
+    if (linkedReelId && linkedReelId !== routeId) {
       this.clear();
       return 'reel_mismatch';
     }

@@ -201,6 +201,29 @@ test('does not attach a new Reel date to the previous player during transitions'
   await expect(page.locator('[data-fb-reel-date]')).toHaveCount(1);
 });
 
+test('ignores links to suggested Reels beside the active player', async () => {
+  html = pageHtml(
+    true,
+    viewer().replace(
+      '<p>Descrizione del Reel</p>',
+      '<p>Descrizione del Reel</p><a href="/reel/999123456/">Suggested Reel</a>',
+    ),
+  );
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  await expect(page.locator('[data-fb-reel-date]')).toContainText('15:16:03');
+});
+
+test('rejects a video directly linked to another Reel', async () => {
+  html = pageHtml(
+    true,
+    viewer()
+      .replace('<video playsinline', '<a href="/reel/999123456/"><video playsinline')
+      .replace('</video>', '</video></a>'),
+  );
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  await expect(page.locator('[data-fb-reel-date]')).toHaveCount(0);
+});
+
 test('ignores non-GraphQL traffic and malformed bridge payloads', async () => {
   await page.goto('https://www.facebook.com/reel/5532624203628819/');
   await page.evaluate(() => {
