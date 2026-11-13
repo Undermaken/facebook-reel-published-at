@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit && node scripts/build.mjs",
+    "package:zip": "npm run build && node store/scripts/package.mjs",
     "dev": "node scripts/build.mjs --watch",
     "lint": "eslint . && tsc --noEmit",
     "format": "prettier --write .",

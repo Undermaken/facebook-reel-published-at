@@ -31,7 +31,7 @@ Le immagini promo non hanno testo e sono condivise fra le lingue. Gli screenshot
 ## Passi nella dashboard
 
 1. Parti da un commit finale verificato. Usa Node 26 per questo workspace, poi esegui `npm ci`, `npm run check`, `npm run test:browser` e `npm run build`. I test non si avviano con il Node 23.7.0 presente anche su questa macchina, a causa di una dipendenza di test. Il manifest deve contenere una versione maggiore di qualsiasi versione già caricata. Il pacchetto aggiornato è la 0.3.1.
-2. Rigenera lo ZIP con `node store/scripts/package.mjs`. Controlla `store/output/SHA256.txt`. Nello ZIP `manifest.json` è alla radice.
+2. Rigenera lo ZIP con `npm run package:zip`. Controlla `store/output/SHA256.txt`. Nello ZIP `manifest.json` è alla radice.
 3. In **Add new item**, carica lo ZIP. Nella scheda **Store listing**, scegli `en` come lingua principale e incolla la descrizione dettagliata da `store/listings/en.md`. Per `it`, `es`, `de`, `fr`, usa il menu delle lingue e incolla il file corrispondente. Il nome e la descrizione breve arrivano dal manifest.
 4. Per ogni lingua, carica nell'ordine `01-date-on-reel.png`, `02-settings.png`, `03-below-reel.png`. Carica il promo 440×280 una sola volta; il marquee 1400×560 è facoltativo. Per l'icona dello store usa `store/assets/store-icon-128.png`; è anche inclusa nello ZIP come `icons/store-icon-128.png` e dichiarata nel manifest.
 5. Nella scheda **Privacy practices**, usa i testi pronti in [dashboard.md](dashboard.md): scopo unico, giustificazione di `storage`, `scripting` e del sito Facebook, dichiarazione dei dati trattati e assenza di codice remoto. Inserisci l'URL pubblico della [privacy policy](privacy-policy.md). Anche i dati elaborati solo in locale vanno dichiarati.
@@ -46,7 +46,7 @@ Le schede e le schermate descrivono la funzione visibile. Non promettono che ogn
 npm run build
 node store/scripts/render-assets.mjs
 node store/scripts/render-video.mjs
-node store/scripts/package.mjs
+npm run package:zip
 ```
 
 La generazione delle immagini richiede Chromium installato con Playwright; il video richiede `ffmpeg`; lo ZIP richiede `zip` e `unzip`. Questi strumenti sono già disponibili nel workspace attuale.
