@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:05,500
+Date et heure de publication à côté du Reel.
+
+2
+00:00:05,500 --> 00:00:11,000
+Choisissez la position, les couleurs et les options.
+
+3
+00:00:11,000 --> 00:00:17,000
+Les modifications apparaissent sans recharger la page.

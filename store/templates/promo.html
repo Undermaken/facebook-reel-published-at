@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        width: {{WIDTH}}px;
+        height: {{HEIGHT}}px;
+        margin: 0;
+        overflow: hidden;
+        background: #0c1d45;
+      }
+      .canvas {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 12% 16%, #315fc4 0, transparent 36%),
+          radial-gradient(circle at 93% 88%, #263c83 0, transparent 36%),
+          linear-gradient(125deg, #0f2b68, #0b183a);
+      }
+      .arc {
+        position: absolute;
+        width: {{ARC_SIZE}}px;
+        height: {{ARC_SIZE}}px;
+        left: {{ARC_LEFT}}px;
+        top: {{ARC_TOP}}px;
+        border: {{ARC_BORDER}}px solid #88aaf14d;
+        border-radius: 50%;
+      }
+      .icon {
+        position: absolute;
+        width: {{ICON_SIZE}}px;
+        height: {{ICON_SIZE}}px;
+        left: {{ICON_LEFT}}px;
+        top: {{ICON_TOP}}px;
+        filter: drop-shadow(0 12px 20px #020b22a1);
+      }
+      .line {
+        position: absolute;
+        left: {{LINE_LEFT}}px;
+        top: {{LINE_TOP}}px;
+        width: {{LINE_WIDTH}}px;
+        height: {{LINE_HEIGHT}}px;
+        background: linear-gradient(90deg, #9fc2ff, #f1bca8);
+        border-radius: 99px;
+      }
+      .line::after {
+        content: "";
+        position: absolute;
+        right: -5px;
+        top: 50%;
+        width: {{DOT_SIZE}}px;
+        height: {{DOT_SIZE}}px;
+        border-radius: 50%;
+        background: #ffd5b3;
+        transform: translateY(-50%);
+        box-shadow: 0 0 0 7px #f9c9ac33;
+      }
+      .reel {
+        position: absolute;
+        right: {{REEL_RIGHT}}px;
+        top: {{REEL_TOP}}px;
+        width: {{REEL_WIDTH}}px;
+        height: {{REEL_HEIGHT}}px;
+        overflow: hidden;
+        border-radius: {{REEL_RADIUS}}px;
+        border: 2px solid #ffffff8c;
+        box-shadow: 0 20px 35px #000b29a8;
+        background: #c4b3dc;
+      }
+      .reel img { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .date-chip {
+        position: absolute;
+        left: 13%;
+        right: 13%;
+        bottom: 11%;
+        height: 11%;
+        border: 2px solid #bad1ff;
+        border-radius: 5px;
+        background: #0d193de8;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: {{CHIP_FONT}}px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <div class="arc"></div>
+      <img class="icon" src="{{ICON_DATA}}" alt="" />
+      <div class="line"></div>
+      <div class="reel">
+        <img src="{{SCENE_DATA}}" alt="" />
+        <div class="date-chip">15:16</div>
+      </div>
+    </div>
+  </body>
+</html>

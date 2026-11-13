@@ -3,6 +3,10 @@
 A Chrome/Chromium Manifest V3 extension that displays the exact publication date
 of the active Facebook Reel, with configurable placement and appearance.
 
+For Chrome Web Store publication materials, see the [store kit](store/README.md).
+The [privacy policy](store/privacy-policy.md) explains the local handling of Reel
+metadata and display preferences.
+
 Dates use the browser's preferred locale and system timezone, retain seconds, and
 omit timezone abbreviations. The entire interface supports Italian, English,
 Spanish, German and French, with English as the fallback for unsupported languages.
