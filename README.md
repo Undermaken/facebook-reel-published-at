@@ -19,7 +19,7 @@ profiles, `/watch`, `/reels`, the mobile website or other domains.
 
 ## Load in Chrome
 
-The downloadable ZIP includes a built `dist` folder. From a Git checkout, build it using
+The release ZIP contains the contents of `dist` at its root. From a Git checkout, build it using
 Node **24.15 or newer in the 24 LTS line, or Node 26+**, then run:
 
 ```sh
@@ -128,16 +128,36 @@ the unavailable message. Ambiguous owner/video identity hides the whole label.
 
 ## Development
 
-| Command                | Purpose                                                  |
-| ---------------------- | -------------------------------------------------------- |
-| `npm run build`        | Type-check and bundle into `dist`                        |
-| `npm run dev`          | Watch TypeScript and popup CSS                           |
-| `npm run lint`         | ESLint and strict TypeScript checks                      |
-| `npm run format`       | Format source, tests and docs with Prettier              |
-| `npm run format:check` | Check formatting without changing files                  |
-| `npm test`             | Run extraction, locale, settings and cache tests         |
-| `npm run test:browser` | Build and test the actual unpacked extension in Chromium |
-| `npm run check`        | Run lint, formatting, unit tests and build               |
+Run these commands from the repository root after `npm ci`:
+
+| Command                | What it does                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `npm run build`        | Checks TypeScript, replaces `dist`, and bundles the extension for Chrome.              |
+| `npm run dev`          | Builds once, then watches the TypeScript entry points and popup CSS.                   |
+| `npm run lint`         | Runs ESLint and the TypeScript type check.                                             |
+| `npm run format`       | Applies Prettier to source, tests, and documentation.                                  |
+| `npm run format:check` | Checks Prettier formatting without changing files.                                     |
+| `npm test`             | Runs the Vitest unit suite once.                                                       |
+| `npm run test:watch`   | Reruns relevant Vitest tests while files change; stop with `Ctrl+C`.                   |
+| `npm run test:browser` | Builds, then runs Playwright tests against Chromium with an isolated profile.          |
+| `npm run check`        | Runs lint, formatting check, unit tests, and build in sequence.                        |
+| `npm run package:zip`  | Builds, creates the versioned store ZIP, verifies its entries, and writes its SHA-256. |
+
+`npm run package:zip` writes `store/output/facebook-reel-dates-<manifest version>.zip`
+and `store/output/SHA256.txt`. The archive has `manifest.json` at its root and
+contains only the built extension files. Packaging requires the `zip` and `unzip`
+command line tools. The output directory is ignored by Git.
+
+Store media can be regenerated separately:
+
+- `node store/scripts/render-assets.mjs` creates localized screenshots,
+  promotional images, and the store icon in `store/assets`. Run `npm run build`
+  first and install Playwright Chromium.
+- `node store/scripts/render-video.mjs` creates localized captioned demo videos
+  and `.srt` files in `store/video`. It requires `ffmpeg` and the generated
+  screenshots.
+- `node store/scripts/package.mjs` packages the existing `dist` directory
+  without rebuilding it. Use `npm run package:zip` for a fresh build and archive.
 
 Install the test browser once with `npx playwright install chromium`. Browser tests
 use a separate temporary profile and intercept all network requests. They do not
