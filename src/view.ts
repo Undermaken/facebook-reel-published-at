@@ -3,6 +3,7 @@ import { createLabel } from './label';
 import { resolveLocale } from './i18n';
 import { Placement } from './placement';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
+import type { DiagnosticStatus } from './diagnostics';
 
 const BADGE = '[data-fb-reel-date]';
 
@@ -81,18 +82,21 @@ export class DateView {
     this.placement.restore();
   }
 
-  render(record: ReelRecord | null, settings: Settings = DEFAULT_SETTINGS): void {
+  render(
+    record: ReelRecord | null,
+    settings: Settings = DEFAULT_SETTINGS,
+  ): DiagnosticStatus {
     const routeId = getReelId(location.href);
     if (!routeId || !settings.showDate) {
       this.clear();
-      return;
+      return 'inactive';
     }
     // Choose the active Reel using its original dimensions, before our own scaling.
     this.placement.restore();
     const target = findHeading();
     if (!target) {
       this.clear();
-      return;
+      return 'target_missing';
     }
     const { video, heading, container } = target;
     const reelLinks = [...container.querySelectorAll<HTMLAnchorElement>('a[href]')]
@@ -100,7 +104,7 @@ export class DateView {
       .filter(Boolean);
     if (reelLinks.some((id) => id !== routeId)) {
       this.clear();
-      return;
+      return 'reel_mismatch';
     }
     const signature = [
       video.currentSrc,
@@ -112,7 +116,7 @@ export class DateView {
     const previous = this.identity.get(video);
     if (previous && previous.id !== routeId && previous.signature === signature) {
       this.clear();
-      return;
+      return 'stale_player';
     }
     this.identity.set(video, { id: routeId, signature });
     if (
@@ -121,7 +125,7 @@ export class DateView {
       (record.publishTime === undefined && !record.dateUnavailable)
     ) {
       this.clear();
-      return;
+      return 'metadata_missing';
     }
     const key = JSON.stringify([
       record.videoId,
@@ -137,9 +141,11 @@ export class DateView {
       this.badge.dataset.fbReelDate === key &&
       (settings.position !== 'author' || this.badge.previousElementSibling === heading)
     ) {
-      if (!this.placement.update(this.badge, video, container, settings.position))
+      if (!this.placement.update(this.badge, video, container, settings.position)) {
         this.clear();
-      return;
+        return 'placement_failed';
+      }
+      return 'shown';
     }
     this.clear();
     document.querySelectorAll(BADGE).forEach((element) => element.remove());
@@ -155,6 +161,10 @@ export class DateView {
     if (settings.position === 'author') heading.after(badge);
     else document.body.append(badge);
     this.badge = badge;
-    if (!this.placement.update(badge, video, container, settings.position)) this.clear();
+    if (!this.placement.update(badge, video, container, settings.position)) {
+      this.clear();
+      return 'placement_failed';
+    }
+    return 'shown';
   }
 }

@@ -2,12 +2,14 @@ import { bridgeMessage, post, RecordStore } from './bridge';
 import { extractRecords, getReelId, MAX_FRAME_CHARS } from './data';
 import { DateView } from './view';
 import { DEFAULT_SETTINGS, subscribeSettings } from './settings';
+import { MissingBadgeDiagnostics } from './diagnostics';
 
 const controllerKey = Symbol.for('facebook-reel-date/content/v1');
 
 class ReelDateController {
   private readonly cache = new RecordStore();
   private readonly view = new DateView();
+  private readonly diagnostics = new MissingBadgeDiagnostics();
   private readonly observer: MutationObserver;
   private activeId: string | null = null;
   private refreshTimer: number | undefined;
@@ -101,9 +103,18 @@ class ReelDateController {
   }
 
   private refresh(): void {
-    if (this.activeId && getReelId(location.href) === this.activeId)
-      this.view.render(this.cache.get(this.activeId), this.settings);
-    else this.view.clear();
+    if (this.activeId && getReelId(location.href) === this.activeId) {
+      try {
+        const status = this.view.render(this.cache.get(this.activeId), this.settings);
+        this.diagnostics.update(this.activeId, status);
+      } catch {
+        this.view.clear();
+        this.diagnostics.update(this.activeId, 'render_failed');
+      }
+    } else {
+      this.view.clear();
+      this.diagnostics.update(null, 'inactive');
+    }
   }
 
   private scheduleRefresh = (): void => {
@@ -139,6 +150,7 @@ class ReelDateController {
     }
     const wasActive = this.activeId !== null;
     this.activeId = id;
+    if (!id) this.diagnostics.update(null, 'inactive');
     this.view.clear();
     window.clearTimeout(this.refreshTimer);
     this.refreshTimer = undefined;

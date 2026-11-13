@@ -100,6 +100,14 @@ test('the interactive popup saves appearance and relative age across openings', 
   await expect(popup.locator('#show-relative')).toBeChecked();
 });
 
+test('explains how to open a Reel when settings are opened elsewhere', async () => {
+  await openExtension();
+  const popup = await openPopup();
+  await expect(popup.locator('#page-warning')).toBeVisible();
+  await expect(popup.locator('#page-warning')).toContainText('facebook.com/reel/');
+  await expect(popup.locator('#show-date')).toBeEnabled();
+});
+
 test('places the date at the top or outside the bottom and restores the player', async () => {
   await openExtension();
   const popup = await openPopup();

@@ -50,6 +50,16 @@ header p,
   font-size: 11px;
   color: #667085;
 }
+#page-warning:not([hidden]) {
+  display: block;
+  margin: -8px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid #f2ca71;
+  border-radius: 8px;
+  background: #fff5d9;
+  color: #684a12;
+  font-size: 12px;
+}
 .display-options {
   border: 0;
   padding: 0;
