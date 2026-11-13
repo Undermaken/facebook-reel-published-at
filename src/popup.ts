@@ -2,6 +2,7 @@ import '../popup.css';
 import { subWeeks } from 'date-fns';
 import { resolveLocale, translations, type Messages } from './i18n';
 import { createLabel } from './label';
+import { recoverOpenReels } from './recover-tabs';
 import {
   DEFAULT_SETTINGS,
   normalizeSettings,
@@ -108,3 +109,4 @@ const unsubscribe = subscribeSettings((value) => {
   status.textContent = settings.showDate ? text.saved : text.paused;
 });
 window.addEventListener('pagehide', unsubscribe, { once: true });
+void recoverOpenReels();
