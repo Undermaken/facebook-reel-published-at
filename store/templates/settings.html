@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="{{LANG}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        width: 1280px;
+        height: 800px;
+        margin: 0;
+        overflow: hidden;
+        color: #17233f;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+          radial-gradient(circle at 87% 15%, #dbe7ff, transparent 29%),
+          linear-gradient(115deg, #f5f8ff, #eaf0fb);
+      }
+      .copy {
+        position: absolute;
+        left: 73px;
+        top: 171px;
+        width: 486px;
+      }
+      .copy img {
+        display: block;
+        width: 70px;
+        height: 70px;
+        margin-bottom: 52px;
+      }
+      h1 {
+        font-size: 58px;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+        margin: 0;
+      }
+      p {
+        font-size: 23px;
+        line-height: 1.4;
+        color: #526787;
+        margin-top: 27px;
+        max-width: 430px;
+      }
+      .note {
+        position: absolute;
+        left: 73px;
+        bottom: 55px;
+        color: #5d7191;
+        font-size: 15px;
+      }
+      .popup-frame {
+        position: absolute;
+        top: 83px;
+        right: 96px;
+        width: 510px;
+        height: 600px;
+        background: #f7f8fa;
+        border: 1px solid #d7e0f0;
+        box-shadow: 0 28px 65px #2242763a;
+      }
+      .popup-frame img {
+        display: block;
+        width: 510px;
+        height: 600px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="copy">
+      <img src="{{ICON_DATA}}" alt="" />
+      <h1>{{TITLE}}</h1>
+      <p>{{SUBTITLE}}</p>
+    </div>
+    <span class="note">{{NOTE}}</span>
+    <div class="popup-frame"><img src="{{POPUP_DATA}}" alt="" /></div>
+  </body>
+</html>

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="{{LANG}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        width: 1280px;
+        height: 800px;
+        margin: 0;
+        overflow: hidden;
+        color: #f5f8ff;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+          radial-gradient(circle at 20% 20%, #244987 0, transparent 32%),
+          radial-gradient(circle at 90% 80%, #173466 0, transparent 36%), #0b1630;
+      }
+      .top-mark {
+        position: absolute;
+        top: 51px;
+        left: 72px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .top-mark img {
+        width: 48px;
+        height: 48px;
+      }
+      .top-mark span {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: #afc9ff;
+      }
+      .copy {
+        position: absolute;
+        top: 206px;
+        left: 72px;
+        width: 490px;
+      }
+      .copy h1 {
+        margin: 0;
+        font-size: 58px;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+      }
+      .copy p {
+        margin: 29px 0 0;
+        max-width: 410px;
+        color: #c9d9f5;
+        font-size: 23px;
+        line-height: 1.4;
+      }
+      .note {
+        position: absolute;
+        bottom: 47px;
+        left: 72px;
+        color: #a9c0ea;
+        font-size: 15px;
+      }
+      [role='dialog'] {
+        position: absolute;
+        top: 39px;
+        right: 170px;
+      }
+      .player {
+        position: relative;
+        width: 420px;
+        height: 710px;
+        overflow: hidden;
+        border-radius: 24px;
+        background: #c7b8d9;
+        box-shadow:
+          0 26px 70px #0208188c,
+          0 0 0 2px #ffffff2e;
+        transform-origin: top center;
+      }
+      .art {
+        position: absolute;
+        inset: 0;
+        background: url('{{SCENE_DATA}}') center / cover no-repeat;
+      }
+      .shade {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(transparent 55%, #101a38a8 100%);
+      }
+      video {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        opacity: 0.01;
+      }
+      .footer {
+        position: absolute;
+        left: 23px;
+        right: 23px;
+        bottom: 48px;
+      }
+      .author-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .author {
+        flex: 1;
+        min-width: 0;
+      }
+      .avatar {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        background: #f5e7d8;
+        border: 2px solid #fff;
+        border-radius: 50%;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0;
+        font-weight: 700;
+      }
+      a {
+        color: white;
+        text-decoration: none;
+      }
+      button {
+        color: #fff;
+        border: 1px solid #fff9;
+        border-radius: 7px;
+        background: #ffffff12;
+        padding: 6px 12px;
+        margin-left: auto;
+      }
+      .description {
+        margin: 11px 0 0;
+        font-size: 13px;
+        color: #fff;
+      }
+    </style>
+    <script type="application/json">
+      {{STORY_JSON}}
+    </script>
+  </head>
+  <body>
+    <div class="top-mark">
+      <img src="{{ICON_DATA}}" alt="" />
+      <span>REEL DATES</span>
+    </div>
+    <div class="copy">
+      <h1>{{TITLE}}</h1>
+      <p>{{SUBTITLE}}</p>
+    </div>
+    <span class="note">{{NOTE}}</span>
+    <div role="dialog">
+      <div role="main">
+        <section class="player">
+          <div class="art"></div>
+          <div class="shade"></div>
+          <video playsinline></video>
+          <div class="footer">
+            <div class="author-row">
+              <span class="avatar" aria-hidden="true"></span>
+              <div class="author">
+                <h2><a href="/profile.php?id=10001">{{AUTHOR}}</a></h2>
+              </div>
+              <button type="button">{{FOLLOW}}</button>
+            </div>
+            <p class="description">{{DESCRIPTION}}</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
