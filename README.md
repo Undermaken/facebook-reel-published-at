@@ -5,7 +5,8 @@ of the active Facebook Reel, with configurable placement and appearance.
 
 For Chrome Web Store publication materials, see the [store kit](store/README.md).
 The [privacy policy](store/privacy-policy.md) explains the local handling of Reel
-metadata and display preferences.
+metadata and display preferences. A standalone [HTML version](store/privacy-policy.html)
+is also available.
 
 Dates use the browser's preferred locale and system timezone, retain seconds, and
 omit timezone abbreviations. The entire interface supports Italian, English,
