@@ -33,6 +33,14 @@ export function observeNetwork(emit: (records: ReelRecord[]) => void): () => voi
   const readers = new Set<() => void>();
   const requests = new Map<XMLHttpRequest, () => void>();
   const requestUrls = new WeakMap<XMLHttpRequest, string>();
+  const warned = new Set<string>();
+  const warnOnce = (reason: string) => {
+    if (warned.has(reason)) return;
+    warned.add(reason);
+    console.warn(
+      `[Facebook Reel Date] ${reason}: GraphQL inspection failed; the page request was not changed.`,
+    );
+  };
   const originalFetch = window.fetch;
   const originalOpen = XMLHttpRequest.prototype.open;
   const originalSend = XMLHttpRequest.prototype.send;
@@ -115,7 +123,11 @@ export function observeNetwork(emit: (records: ReelRecord[]) => void): () => voi
     try {
       const url = requestUrlSchema.safeParse(args[0]).data ?? '';
       if (allowed() && isGraphql(url)) {
-        void result.then((response) => readResponse(response)).catch(() => {});
+        void result
+          .then((response) =>
+            readResponse(response).catch(() => warnOnce('response_inspection_failed')),
+          )
+          .catch(() => {});
       }
     } catch {
       /* Inspection must not change native fetch semantics. */
@@ -189,7 +201,7 @@ export function observeNetwork(emit: (records: ReelRecord[]) => void): () => voi
           if (xhr.responseType === 'json' || parser.isComplete()) finish(metadata);
         }
       } catch {
-        /* Observing a response must never interrupt Facebook. */
+        warnOnce('xhr_inspection_failed');
       }
     };
     const timeout = window.setTimeout(cleanup, 15_000);

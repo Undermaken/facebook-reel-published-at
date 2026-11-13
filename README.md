@@ -44,8 +44,33 @@ uninstall, use **Remove** on that page.
 
 The calendar-and-play icon appears in the toolbar and extension manager. Its
 editable source is `icons/source.svg`; Chrome loads the matching PNG sizes from
-`icons/icon-16.png`, `icon-32.png`, `icon-48.png` and `icon-128.png`. The design is
-original and does not contain Facebook's logo or the isolated "f" mark.
+`icons/icon-16.png`, `icon-32.png`, `icon-48.png` and the padded
+`icons/store-icon-128.png`. The design is original and does not contain Facebook's
+logo or the isolated "f" mark.
+
+## Diagnose a missing date box
+
+On a Reel, open Chrome DevTools and filter the **Console** for
+`[Facebook Reel Date]`. If the box remains absent for five seconds, the extension
+logs the reason once per Reel and reason. Normal loading does not produce a warning.
+The logs contain reason codes, not GraphQL response bodies or Reel URLs.
+
+- `metadata_missing`: no publication metadata matched the active Reel. Reload the
+  Reel to capture requests made before the extension started. Some Reels do not
+  provide usable metadata.
+- `target_missing`: the extension could not identify one visible player and its
+  creator heading. Facebook's layout may have changed.
+- `stale_player` or `reel_mismatch`: navigation is showing a player associated with
+  another Reel. `reel_mismatch` applies only when the video itself is inside a link
+  to a different Reel. Check whether the warning disappears once the next Reel loads.
+- `placement_failed`: the selected position did not fit the visible player. Try
+  another position or a larger browser window.
+- `render_failed`, `response_inspection_failed`, or `xhr_inspection_failed`: an
+  unexpected rendering or GraphQL inspection error occurred. Reload the tab and
+  keep the reason code if you report the issue.
+
+The settings popup explains when the active tab is outside a supported
+`www.facebook.com/reel/<numeric-id>` page. Settings remain editable there.
 
 ## Settings
 

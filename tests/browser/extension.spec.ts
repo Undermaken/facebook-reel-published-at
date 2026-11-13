@@ -47,6 +47,44 @@ test('reads bootstrap JSON and places one Italian date below the author', async 
   await page.screenshot({ path: test.info().outputPath('reel-date.png') });
 });
 
+test('logs a persistent missing date once without exposing GraphQL data', async () => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning' && message.text().includes('[Facebook Reel Date]'))
+      warnings.push(message.text());
+  });
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  await expect.poll(() => warnings.length, { timeout: 8_000 }).toBe(1);
+  expect(warnings[0]).toContain('metadata_missing');
+  expect(warnings[0]).not.toContain('publish_time');
+  await page.evaluate(async () => {
+    await fetch('/api/graphql/');
+  });
+  await expect(page.locator('[data-fb-reel-date]')).toContainText('15:16:03');
+  expect(warnings).toHaveLength(1);
+});
+
+test('logs a failed GraphQL inspection without changing the page request', async () => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning' && message.text().includes('[Facebook Reel Date]'))
+      warnings.push(message.text());
+  });
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  const received = await page.evaluate(async () => {
+    Response.prototype.clone = () => {
+      throw new Error('test clone failure');
+    };
+    return (await fetch('/api/graphql/')).text();
+  });
+  expect(received).toBe(streamedResponse);
+  await expect
+    .poll(() =>
+      warnings.some((warning) => warning.includes('response_inspection_failed')),
+    )
+    .toBe(true);
+});
+
 test('observes fetch without consuming or changing the response', async () => {
   await page.goto('https://www.facebook.com/reel/5532624203628819/');
   const received = await page.evaluate(async () =>
@@ -161,6 +199,29 @@ test('does not attach a new Reel date to the previous player during transitions'
   );
   await expect(page.locator('[data-fb-reel-date]')).toContainText('18 ottobre 2026');
   await expect(page.locator('[data-fb-reel-date]')).toHaveCount(1);
+});
+
+test('ignores links to suggested Reels beside the active player', async () => {
+  html = pageHtml(
+    true,
+    viewer().replace(
+      '<p>Descrizione del Reel</p>',
+      '<p>Descrizione del Reel</p><a href="/reel/999123456/">Suggested Reel</a>',
+    ),
+  );
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  await expect(page.locator('[data-fb-reel-date]')).toContainText('15:16:03');
+});
+
+test('rejects a video directly linked to another Reel', async () => {
+  html = pageHtml(
+    true,
+    viewer()
+      .replace('<video playsinline', '<a href="/reel/999123456/"><video playsinline')
+      .replace('</video>', '</video></a>'),
+  );
+  await page.goto('https://www.facebook.com/reel/5532624203628819/');
+  await expect(page.locator('[data-fb-reel-date]')).toHaveCount(0);
 });
 
 test('ignores non-GraphQL traffic and malformed bridge payloads', async () => {

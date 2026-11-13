@@ -1,6 +1,6 @@
 # Guida alla pubblicazione sul Chrome Web Store
 
-Questa cartella contiene testi, immagini e video per pubblicare la versione 0.3.0 dell'estensione. Le immagini dimostrative usano l'illustrazione originale del pannello; il box data e le impostazioni provengono dalla build reale. Non sono schermate di un Reel Facebook reale.
+Questa cartella contiene testi, immagini e video per pubblicare la versione 0.3.1 dell'estensione. Le immagini dimostrative usano l'illustrazione originale del pannello; il box data e le impostazioni provengono dalla build reale. Non sono schermate di un Reel Facebook reale.
 
 ## Materiale pronto
 
@@ -15,7 +15,7 @@ Questa cartella contiene testi, immagini e video per pubblicare la versione 0.3.
 | Promo globale 440×280 e marquee 1400×560                      | `store/assets/promo-*.png`                   |
 | Video silenzioso di 17 s con caption integrate, cinque lingue | `store/video/demo-*.mp4`                     |
 | Sottotitoli modificabili                                      | `store/video/{en,it,es,de,fr}.srt`           |
-| ZIP per l'upload                                              | `store/output/facebook-reel-dates-0.3.0.zip` |
+| ZIP per l'upload                                              | `store/output/facebook-reel-dates-0.3.1.zip` |
 
 Le immagini promo non hanno testo e sono condivise fra le lingue. Gli screenshot e i video sono localizzati. Puoi sostituire lo screenshot illustrativo con una tua schermata di un Reel reale, ottenuta con il permesso necessario e senza dati personali visibili.
 
@@ -30,7 +30,7 @@ Le immagini promo non hanno testo e sono condivise fra le lingue. Gli screenshot
 
 ## Passi nella dashboard
 
-1. Parti da un commit finale verificato. Usa Node 26 per questo workspace, poi esegui `npm ci`, `npm run check`, `npm run test:browser` e `npm run build`. I test non si avviano con il Node 23.7.0 presente anche su questa macchina, a causa di una dipendenza di test. Il manifest deve contenere una versione maggiore di qualsiasi versione già caricata. Per la prima pubblicazione è pronta la 0.3.0.
+1. Parti da un commit finale verificato. Usa Node 26 per questo workspace, poi esegui `npm ci`, `npm run check`, `npm run test:browser` e `npm run build`. I test non si avviano con il Node 23.7.0 presente anche su questa macchina, a causa di una dipendenza di test. Il manifest deve contenere una versione maggiore di qualsiasi versione già caricata. Il pacchetto aggiornato è la 0.3.1.
 2. Rigenera lo ZIP con `node store/scripts/package.mjs`. Controlla `store/output/SHA256.txt`. Nello ZIP `manifest.json` è alla radice.
 3. In **Add new item**, carica lo ZIP. Nella scheda **Store listing**, scegli `en` come lingua principale e incolla la descrizione dettagliata da `store/listings/en.md`. Per `it`, `es`, `de`, `fr`, usa il menu delle lingue e incolla il file corrispondente. Il nome e la descrizione breve arrivano dal manifest.
 4. Per ogni lingua, carica nell'ordine `01-date-on-reel.png`, `02-settings.png`, `03-below-reel.png`. Carica il promo 440×280 una sola volta; il marquee 1400×560 è facoltativo. Per l'icona dello store usa `store/assets/store-icon-128.png`; è anche inclusa nello ZIP come `icons/store-icon-128.png` e dichiarata nel manifest.

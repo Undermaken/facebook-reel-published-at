@@ -45,6 +45,8 @@ const english = {
   published: 'Published on',
   justNow: 'just now',
   preview: 'Reel preview',
+  pageWarning:
+    'Open a Facebook Reel at facebook.com/reel/… to see its date. You can still change settings here.',
 };
 
 export type Messages = { [Key in keyof typeof english]: string };
@@ -81,6 +83,8 @@ const messages: Record<Language, Messages> = {
     published: 'Pubblicato il',
     justNow: 'adesso',
     preview: 'Anteprima del Reel',
+    pageWarning:
+      'Apri un Reel su facebook.com/reel/… per vedere la data. Puoi comunque modificare le impostazioni qui.',
   },
   es: {
     title: 'Fechas de Reels',
@@ -112,6 +116,8 @@ const messages: Record<Language, Messages> = {
     published: 'Publicado el',
     justNow: 'ahora mismo',
     preview: 'Vista previa del Reel',
+    pageWarning:
+      'Abre un Reel en facebook.com/reel/… para ver la fecha. Puedes seguir cambiando los ajustes aquí.',
   },
   de: {
     title: 'Reel-Datum',
@@ -143,6 +149,8 @@ const messages: Record<Language, Messages> = {
     published: 'Veröffentlicht am',
     justNow: 'gerade eben',
     preview: 'Reel-Vorschau',
+    pageWarning:
+      'Öffne ein Reel unter facebook.com/reel/…, um das Datum zu sehen. Die Einstellungen kannst du hier trotzdem ändern.',
   },
   fr: {
     title: 'Dates des Reels',
@@ -174,6 +182,8 @@ const messages: Record<Language, Messages> = {
     published: 'Publié le',
     justNow: "à l'instant",
     preview: 'Aperçu du Reel',
+    pageWarning:
+      'Ouvrez un Reel sur facebook.com/reel/… pour voir sa date. Vous pouvez tout de même modifier les paramètres ici.',
   },
 };
 

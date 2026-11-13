@@ -1,6 +1,6 @@
 {
   "name": "facebook-reel-date",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Show the exact publication date on Facebook Reels.",
   "type": "module",

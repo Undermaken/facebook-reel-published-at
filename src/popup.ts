@@ -3,6 +3,7 @@ import { subWeeks } from 'date-fns';
 import { resolveLocale, translations, type Messages } from './i18n';
 import { createLabel } from './label';
 import { recoverOpenReels } from './recover-tabs';
+import { isReelTab } from './popup-context';
 import {
   DEFAULT_SETTINGS,
   normalizeSettings,
@@ -26,6 +27,7 @@ const relative = document.querySelector<HTMLInputElement>('#show-relative')!;
 const ai = document.querySelector<HTMLInputElement>('#show-ai-badge')!;
 const visibility = document.querySelector<HTMLInputElement>('#show-date')!;
 const status = document.querySelector<HTMLElement>('#status')!;
+const pageWarning = document.querySelector<HTMLElement>('#page-warning')!;
 const mockup = document.querySelector<HTMLElement>('#mockup')!;
 const positions = [...document.querySelectorAll<HTMLButtonElement>('[data-position]')];
 mockup.setAttribute('aria-label', text.preview);
@@ -109,4 +111,12 @@ const unsubscribe = subscribeSettings((value) => {
   status.textContent = settings.showDate ? text.saved : text.paused;
 });
 window.addEventListener('pagehide', unsubscribe, { once: true });
+void chrome.tabs
+  .query({ active: true, lastFocusedWindow: true })
+  .then(([tab]) => {
+    pageWarning.hidden = isReelTab(tab?.url);
+  })
+  .catch(() => {
+    pageWarning.hidden = false;
+  });
 void recoverOpenReels();
